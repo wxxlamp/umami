@@ -44,6 +44,21 @@ describe('public blog counters', () => {
     expect((await response.json()).site).toEqual({ pv: 0, uv: 0 });
     expect(rawQuery).toHaveBeenCalledTimes(1);
   });
+  it('accepts public HKUST resource-document paths', async () => {
+    rawQuery
+      .mockResolvedValueOnce([{ pv: 8n, uv: 3n }])
+      .mockResolvedValueOnce([{ pv: 2n, uv: 1n }]);
+    const path = '/resources/hkust-exam-papers/blockchain/final-exam-2023/';
+    const response = await GET(
+      new Request(`https://stats.example/api/public/blog-stats?path=${encodeURIComponent(path)}`),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).page).toEqual({ pv: 2, uv: 1 });
+    expect(rawQuery.mock.calls[1][1]).toEqual({
+      websiteId: '7ae63952-76fc-4a90-a5b7-aedd93fb56c9',
+      path,
+    });
+  });
   it.each([
     '?path=/resume/',
     '?path=//other.example/',
