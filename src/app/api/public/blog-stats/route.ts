@@ -5,6 +5,8 @@ import prisma from '@/lib/prisma';
 // date range, visitor details, or administrator credentials are accepted.
 const websiteId = '7ae63952-76fc-4a90-a5b7-aedd93fb56c9';
 const headers = { 'Access-Control-Allow-Origin': '*' };
+const articlePathPattern = /^\/(?:en\/)?\d{4}\/\d{2}\/\d{2}\/[^/?#\\\p{Cc}]+\/$/u;
+const resourcePathPattern = /^\/resources\/hkust-exam-papers(?:\/[a-z0-9-]+){0,2}\/$/;
 
 const counters = unstable_cache(
   async (path: string) => {
@@ -38,12 +40,13 @@ export async function GET(request: Request) {
   } catch {
     return Response.json({ error: 'Invalid path' }, { status: 400, headers });
   }
-  // Article counters only; neither protected pages nor arbitrary filter queries.
+  // Public blog articles and the HKUST resource documents only; neither protected
+  // pages nor arbitrary filter queries.
   if (
     [...query.keys()].some(key => key !== 'path') ||
     query.getAll('path').length > 1 ||
     path.length > 500 ||
-    (path && !/^\/(?:en\/)?\d{4}\/\d{2}\/\d{2}\/[^/?#\\\p{Cc}]+\/$/u.test(path))
+    (path && !articlePathPattern.test(path) && !resourcePathPattern.test(path))
   ) {
     return Response.json({ error: 'Invalid path' }, { status: 400, headers });
   }
